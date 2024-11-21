@@ -1,8 +1,10 @@
-//rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
 //pazi y dolazi prije x, [y][x]
-
 /*TO DO
-	napravit GAMEOVER i to je to
+	gameover
+
+	castling
+	en passant
+	position to FEN
 */
 #include<iostream>
 using namespace std;
@@ -17,8 +19,29 @@ bool isValidQueenMove(char piece, int x1, int y1, int x2, int y2, char board[8][
 bool isValidKingMove(char piece, int x1, int y1, int x2, int y2, char board[8][8]);
 bool isKingInCheck(char board[8][8], char king, char currentPlayer);
 bool isUnderAttack(int x, int y, char board[8][8], char currentPlayer);
- 
-void FENtoBoard(string FEN, char board[8][8]){
+
+struct extraStates{
+    char onMove;
+    bool whiteKingCastle;
+    bool whiteQueenCastle;
+    bool blackKingCastle;
+    bool blackQueenCastle;
+    string enPassant;
+    int fiftyMoveRule; // left number
+    int totalMoves; // right, last number
+    extraStates(){
+        onMove = 'B';
+        whiteQueenCastle = true;
+        whiteQueenCastle = true;
+        blackKingCastle = true;
+        blackQueenCastle = true;
+        enPassant = '-';
+        fiftyMoveRule = 0;
+        totalMoves = 0;
+    }
+};
+
+void FENtoBoard(string FEN, char board[8][8], extraStates& states){
     int i = 0;
     int ii = 0;
     int jj = 0;
@@ -79,7 +102,7 @@ int playMove(char board[8][8], int x1, int y1, int x2, int y2, char currentPlaye
     char piece = board[y1][x1];
 
     //ako je u boardu ili je piece prazno polje
-	if (!isWithinBoard(x2, y2) || piece == '.') return false; 
+	if (!isWithinBoard(x2, y2) || piece == '.') return false;
 
 	//ako je piece od igrača koji nije na redu
 	if(islower(piece) && currentPlayer == 'W') return false;
@@ -128,7 +151,7 @@ bool isValidPawnMove(char piece, int x1, int y1, int x2, int y2, char board[8][8
 		}
 	}else if(abs(x2-x1) == 1 && y2 == y1 + direction){//capture
 		if(board[y2][x2] != '.'){
-			if(piece == 'P' && islower(board[y2][x2]) || piece == 'p' && isupper(board[y2][x2]))
+			if((piece == 'P' && islower(board[y2][x2])) || (piece == 'p' && isupper(board[y2][x2])))
 				return true;
 		}
 	}
@@ -302,6 +325,17 @@ bool isWithinBoard(int x, int y) {
     return x>=0 && x<8 && y>=0 && y<8;
 }
 
+bool gameOver(){
+	// dobijemo board, tko je na potezu
+	// gledamo dal je king koji je na potezu napadnut
+	// gledamo dal možemo pomaknut kralja na neko drugo mjesto di nije napadnut
+	// simuliramo poteze i gledamo dal možemo maknut kralja iz checka
+	// ako ne game over je 
+}
+    
+
+
+
 int main(){
       ios_base::sync_with_stdio(true);
       cin.tie(NULL);
@@ -310,29 +344,28 @@ int main(){
       string inputFEN;inputFEN = startingFEN;
 
       char board[8][8] = {};
-      FENtoBoard(inputFEN, board);
 
-      string parseThis;
+      extraStates states;
 
-      char onMove = 'B';
+      FENtoBoard(inputFEN, board, states);
 
-      for(int i=0; ;i++){
+      string parseThis; // parsing moves
 
-        onMove == 'B' ? onMove = 'W' : onMove = 'B';
+    for(int i=0; ;i++){
+
+        states.onMove == 'B' ? states.onMove = 'W' : states.onMove = 'B';
         if_move_isnt_found:
         printBoard(board);
-        //printDebugBoard(board);
-        onMove == 'B' ? cout<<"Black to move\n" : cout<<"White to move\n";
+        states.onMove == 'B' ? cout<<"Black to move\n" : cout<<"White to move\n";
         cout<<"enter move in this format:e2,e4\n";
         cin>>parseThis;
         int x1,y1,x2,y2;
-        parseMove(parseThis, &x1, &y1, &x2, &y2, onMove);
-        if(!playMove(board, x1, y1, x2, y2, onMove)){
+        parseMove(parseThis, &x1, &y1, &x2, &y2, states.onMove);
+        if(!playMove(board, x1, y1, x2, y2, states.onMove)){
         	cout<<"illegal move, enter new one;\n";
         	goto if_move_isnt_found;
         }// ako je potez nelegalan onda ide opet do inputa
-        
-
       }
+
     return 0;
 }
